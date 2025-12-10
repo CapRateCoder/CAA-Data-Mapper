@@ -30,23 +30,21 @@ export const resolveUnmappedFieldsWithOpenAI = async (
   const prompt = `You are a data engineering expert specializing in the RESO Data Dictionary.\n\nReturn a JSON array of objects with properties: header, resoField (string or null), confidence (High|Medium|Low).\n\nColumns:\n${JSON.stringify(fieldDescriptions, null, 2)}`;
 
   try {
-    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Netlify proxy directly (same-origin, keeps API key server-side)
+    const proxyResp = await fetch('/.netlify/functions/proxy-llm', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 8000,
-        temperature: 0.0
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'openai', apiKey, prompt })
     });
 
-    const data = await resp.json();
-    const content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || '';
-    const parsed = extractJson(content);
+    const proxyText = await proxyResp.text();
+    console.debug('OpenAI proxy response:', proxyText);
+
+    if (!proxyResp.ok) {
+      throw new Error(`OpenAI proxy error ${proxyResp.status}: ${proxyText}`);
+    }
+
+    const parsed = extractJson(proxyText);
 
     return mappings.map(m => {
       const suggestion = (parsed || []).find((s: any) => s.header === m.originalHeader);
@@ -56,31 +54,8 @@ export const resolveUnmappedFieldsWithOpenAI = async (
       return m;
     });
   } catch (error) {
-    console.warn('Direct OpenAI fetch failed, attempting proxy fallback:', error && String(error));
-    try {
-      const proxyResp = await fetch('/.netlify/functions/proxy-llm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'openai', apiKey, prompt })
-      });
-      const proxyText = await proxyResp.text();
-      if (!proxyResp.ok) {
-        throw new Error(`Proxy error ${proxyResp.status}: ${proxyText}`);
-      }
-      console.debug('OpenAI proxy response:', proxyText);
-      const parsed = extractJson(proxyText);
-
-      return mappings.map(m => {
-        const suggestion = (parsed || []).find((s: any) => s.header === m.originalHeader);
-        if (suggestion && suggestion.resoField) {
-          return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM, source: MappingSource.AI };
-        }
-        return m;
-      });
-    } catch (proxyErr) {
-      console.error('OpenAI proxy error:', proxyErr);
-      return mappings;
-    }
+    console.error('OpenAI proxy error:', error);
+    throw error;
   }
 };
 
