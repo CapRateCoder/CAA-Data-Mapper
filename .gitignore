@@ -6,7 +6,7 @@ node_modules/
 node_modules/.vite/
 
 # Build output
-dist/
+# (dist/ is tracked in this repo; remove this line if you want to ignore built assets)
 
 # Local env files
 .env
