@@ -1,4 +1,4 @@
-import { FieldMapping, MappingConfidence, MappingSource } from '../types';
+import { FieldMapping, MappingConfidence } from '../types';
 
 const extractJson = (text: string) => {
   // Try direct parse
@@ -51,13 +51,13 @@ export const resolveUnmappedFieldsWithOpenAI = async (
     return mappings.map(m => {
       const suggestion = (parsed || []).find((s: any) => s.header === m.originalHeader);
       if (suggestion && suggestion.resoField) {
-        return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM, source: MappingSource.AI };
+        return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM };
       }
       return m;
     });
   } catch (error) {
-    console.error('OpenAI error:', error);
-    throw error;
+    console.error('OpenAI mapping error:', error);
+    return mappings;
   }
 };
 
