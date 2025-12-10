@@ -1,6 +1,6 @@
 <div align="center">
-  <h1 align="center">CAA Data Field Harmonizer</h1>
-  <h3 align="center">MLS Data Standardization Tool</h3>
+    <h1 align="center">CAA Data Field Mapper</h1>
+    <h3 align="center">MLS Data Standardization Tool</h3>
 </div>
 
 <p align="center">

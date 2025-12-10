@@ -1,6 +1,6 @@
 # User Guide: Getting Your Gemini API Key
 
-This guide will help users of your CAA Data Harmonizer get their own free Gemini API key for AI-powered field mapping.
+This guide will help users of your CAA Data Field Mapper get their own free Gemini API key for AI-powered field mapping.
 
 ## Why Do I Need an API Key?
 
@@ -26,7 +26,7 @@ Go to: **https://aistudio.google.com/app/apikey**
 
 ### Step 4: Enter Key in the App
 
-1. In the RESO Data Harmonizer, look for "API Key Settings"
+1. In the CAA Data Field Mapper, look for "API Key Settings"
 2. Click to expand the settings section
 3. Paste your API key into the input field
 4. Click "Save"
@@ -118,7 +118,7 @@ If you're having trouble:
 
 ## Alternative: Using Without AI
 
-You can still use the RESO Data Harmonizer without an API key! The app includes:
+You can still use the CAA Data Field Mapper without an API key! The app includes:
 
 - **Exact matching**: Automatically finds fields that match RESO names exactly
 - **Fuzzy matching**: Intelligently suggests matches for similar field names

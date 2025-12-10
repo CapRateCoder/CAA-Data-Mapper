@@ -1,5 +1,5 @@
 {
-  "name": "CAA Data Field Harmonizer",
+  "name": "CAA Data Field Mapper",
   "description": "An intelligent MLS data harmonization tool that maps disparate CSV/Excel column headers to the RESO Data Dictionary standard using Fuzzy Matching and Gemini AI.",
   "requestFramePermissions": []
 }

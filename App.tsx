@@ -89,7 +89,7 @@ function App() {
               <Database className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">RESO Data Field Harmonizer</h1>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">CAA Data Field Mapper</h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">MLS Data Standardization Tool</p>
             </div>
           </div>
