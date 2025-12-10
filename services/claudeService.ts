@@ -1,4 +1,4 @@
-import { FieldMapping, MappingConfidence, MappingSource } from '../types';
+import { FieldMapping, MappingConfidence } from '../types';
 
 const extractJson = (text: string) => {
   try { return JSON.parse(text); } catch {}
@@ -27,32 +27,34 @@ export const resolveUnmappedFieldsWithClaude = async (
   const prompt = `You are a data engineering expert specializing in the RESO Data Dictionary.\n\nReturn a JSON array of objects with properties: header, resoField (string or null), confidence (High|Medium|Low).\n\nColumns:\n${JSON.stringify(fieldDescriptions, null, 2)}`;
 
   try {
-    // Call Netlify proxy directly (same-origin, keeps API key server-side)
-    const proxyResp = await fetch('/.netlify/functions/proxy-llm', {
+    const resp = await fetch('https://api.anthropic.com/v1/complete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider: 'claude', apiKey, prompt, model: 'claude-2.1' })
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        model: 'claude-2.1',
+        prompt: prompt,
+        max_tokens: 1000,
+        temperature: 0.0
+      })
     });
 
-    const proxyText = await proxyResp.text();
-    console.debug('Claude proxy response:', proxyText);
-
-    if (!proxyResp.ok) {
-      throw new Error(`Claude proxy error ${proxyResp.status}: ${proxyText}`);
-    }
-
-    const parsed = extractJson(proxyText);
+    const data = await resp.json();
+    const content = data?.completion || data?.completion?.text || data?.response || '';
+    const parsed = extractJson(content);
 
     return mappings.map(m => {
       const suggestion = (parsed || []).find((s: any) => s.header === m.originalHeader);
       if (suggestion && suggestion.resoField) {
-        return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM, source: MappingSource.AI };
+        return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM };
       }
       return m;
     });
   } catch (error) {
-    console.error('Claude proxy error:', error);
-    throw error;
+    console.error('Claude mapping error:', error);
+    return mappings;
   }
 };
 

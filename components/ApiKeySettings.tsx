@@ -7,7 +7,8 @@ interface ApiKeySettingsProps {
 
 const PROVIDERS = [
   { id: 'gemini', label: 'Google Gemini', helpUrl: 'https://aistudio.google.com/app/apikey' },
-  { id: 'openai', label: 'OpenAI (ChatGPT)', helpUrl: 'https://platform.openai.com/account/api-keys' }
+  { id: 'openai', label: 'OpenAI (ChatGPT)', helpUrl: 'https://platform.openai.com/account/api-keys' },
+  { id: 'claude', label: 'Anthropic (Claude)', helpUrl: 'https://console.anthropic.com/' }
 ];
 
 export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ onLLMConfigChange }) => {
@@ -15,10 +16,11 @@ export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ onLLMConfigChang
   const [selectedProvider, setSelectedProvider] = useState<string>(() => localStorage.getItem('selected_llm') || 'gemini');
   const [keys, setKeys] = useState<Record<string, string>>(() => ({
     gemini: localStorage.getItem('gemini_api_key') || '',
-    openai: localStorage.getItem('openai_api_key') || ''
+    openai: localStorage.getItem('openai_api_key') || '',
+    claude: localStorage.getItem('claude_api_key') || ''
   }));
   const [showKey, setShowKey] = useState(false);
-  const [isSaved, setIsSaved] = useState<Record<string, boolean>>({ gemini: !!keys.gemini, openai: !!keys.openai });
+  const [isSaved, setIsSaved] = useState<Record<string, boolean>>({ gemini: !!keys.gemini, openai: !!keys.openai, claude: !!keys.claude });
 
   useEffect(() => {
     // Notify parent of current selection and key if present
