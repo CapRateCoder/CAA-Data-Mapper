@@ -1,5 +1,5 @@
 <div align="center">
-  <h1 align="center">RESO Data Field Harmonizer</h1>
+  <h1 align="center">CAA Data Field Harmonizer</h1>
   <h3 align="center">MLS Data Standardization Tool</h3>
 </div>
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reso-harmonizer-v2';
+const CACHE_NAME = 'caa-data-mapper-v2';
 const urlsToCache = [
   '/',
   '/index.html',

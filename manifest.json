@@ -1,6 +1,6 @@
 {
-  "name": "RESO Data Field Harmonizer",
-  "short_name": "RESO Harmonizer",
+  "name": "CAA Data Field Harmonizer",
+  "short_name": "CAA Data Mapper",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

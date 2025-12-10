@@ -1,6 +1,6 @@
 # User Guide: Getting Your Gemini API Key
 
-This guide will help users of your RESO Data Harmonizer get their own free Gemini API key for AI-powered field mapping.
+This guide will help users of your CAA Data Harmonizer get their own free Gemini API key for AI-powered field mapping.
 
 ## Why Do I Need an API Key?
 

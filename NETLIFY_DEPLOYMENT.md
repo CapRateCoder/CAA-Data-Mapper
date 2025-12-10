@@ -1,4 +1,4 @@
-# Netlify Deployment Guide for RESO Data Harmonizer
+# Netlify Deployment Guide for CAA Data Harmonizer
 
 This guide will help you deploy your React app to Netlify. **Good news: You don't need to configure any API keys on the server!** Users provide their own Gemini API keys directly in the web interface.
 
