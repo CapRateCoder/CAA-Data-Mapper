@@ -4,7 +4,7 @@ import { MappingTable } from './components/MappingTable';
 import { ApiKeySettings } from './components/ApiKeySettings';
 import { FieldMapping } from './types';
 import { generateInitialMappings } from './services/mappingService';
-import { resolveUnmappedFieldsWithAI } from './services/geminiService';
+import { resolveUnmappedFieldsWithAI } from './services/aiService';
 import { Database, Wand2, Download, RefreshCw, ArrowLeft } from 'lucide-react';
 import Papa from 'papaparse';
 
@@ -15,6 +15,7 @@ function App() {
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [usageCount] = useState<number>(4521);
   const [apiKey, setApiKey] = useState<string>('');
+  const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem('selected_llm') || 'gemini');
   const [aiError, setAiError] = useState<string>(''); 
 
   const handleDataLoaded = (headers: string[], data: any[]) => {
@@ -32,14 +33,14 @@ function App() {
 
   const handleMagicFix = async () => {
     if (!apiKey) {
-      setAiError('Please configure your Gemini API key in the settings above.');
+      setAiError(`Please configure your ${llmProvider} API key in the settings above.`);
       return;
     }
-    
+
     setIsProcessingAI(true);
     setAiError('');
     try {
-      const improvedMappings = await resolveUnmappedFieldsWithAI(mappings, apiKey);
+      const improvedMappings = await resolveUnmappedFieldsWithAI(mappings, llmProvider, apiKey);
       setMappings(improvedMappings);
     } catch (error: any) {
       console.error('AI mapping error:', error);
@@ -131,7 +132,7 @@ function App() {
               <p className="text-lg text-slate-600 dark:text-slate-300">Upload your raw MLS export file to instantly map it to the RESO Data Dictionary standard using our smart fuzzy matching and AI.</p>
             </div>
             
-            <ApiKeySettings onApiKeyChange={setApiKey} hasApiKey={!!apiKey} />
+            <ApiKeySettings onLLMConfigChange={(provider, key) => { setLlmProvider(provider); setApiKey(key); }} />
             
             <FileUpload onDataLoaded={handleDataLoaded} />
             
@@ -155,7 +156,7 @@ function App() {
 
         {step === 'map' && (
           <div className="space-y-6">
-            <ApiKeySettings onApiKeyChange={setApiKey} hasApiKey={!!apiKey} />
+            <ApiKeySettings onLLMConfigChange={(provider, key) => { setLlmProvider(provider); setApiKey(key); }} />
             
             {aiError && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
