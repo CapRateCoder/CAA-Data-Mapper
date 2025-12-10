@@ -1,4 +1,4 @@
-import { FieldMapping, MappingConfidence } from '../types';
+import { FieldMapping, MappingConfidence, MappingSource } from '../types';
 
 const extractJson = (text: string) => {
   // Try direct parse
@@ -51,13 +51,36 @@ export const resolveUnmappedFieldsWithOpenAI = async (
     return mappings.map(m => {
       const suggestion = (parsed || []).find((s: any) => s.header === m.originalHeader);
       if (suggestion && suggestion.resoField) {
-        return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM };
+        return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM, source: MappingSource.AI };
       }
       return m;
     });
   } catch (error) {
-    console.error('OpenAI mapping error:', error);
-    return mappings;
+    console.warn('Direct OpenAI fetch failed, attempting proxy fallback:', error && String(error));
+    try {
+      const proxyResp = await fetch('/.netlify/functions/proxy-llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: 'openai', apiKey, prompt })
+      });
+      const proxyText = await proxyResp.text();
+      if (!proxyResp.ok) {
+        throw new Error(`Proxy error ${proxyResp.status}: ${proxyText}`);
+      }
+      console.debug('OpenAI proxy response:', proxyText);
+      const parsed = extractJson(proxyText);
+
+      return mappings.map(m => {
+        const suggestion = (parsed || []).find((s: any) => s.header === m.originalHeader);
+        if (suggestion && suggestion.resoField) {
+          return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM, source: MappingSource.AI };
+        }
+        return m;
+      });
+    } catch (proxyErr) {
+      console.error('OpenAI proxy error:', proxyErr);
+      return mappings;
+    }
   }
 };
 
