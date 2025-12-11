@@ -18,6 +18,7 @@ function App() {
   const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem('selected_llm') || 'gemini');
   const [aiError, setAiError] = useState<string>(''); 
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [conflictHeaders, setConflictHeaders] = useState<string[]>([]);
 
   const handleDataLoaded = (headers: string[], data: any[]) => {
     const initial = generateInitialMappings(headers, data);
@@ -71,6 +72,17 @@ function App() {
       const parts = duplicates.map(([target, headers]) => `"${target}" <- ${headers.join(', ')}`);
       const message = `Duplicate target fields detected: ${parts.join(' ; ')}. Please resolve duplicates before exporting.`;
       setDuplicateWarning(message);
+      // Save flattened conflicting original headers so the table can highlight them
+      const headersList = duplicates.flatMap(([, headers]) => headers);
+      setConflictHeaders(headersList);
+      // scroll to first conflict row if present
+      setTimeout(() => {
+        const first = headersList[0];
+        if (!first) return;
+        const id = `mapping-row-${first.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 120);
       // don't proceed with export
       return;
     }
@@ -145,6 +157,18 @@ function App() {
         </div>
       </header>
 
+      {/* Floating duplicate warning (visible even when scrolled) */}
+      {duplicateWarning && (
+        <div className="fixed right-4 top-20 z-50 max-w-lg w-96">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 shadow">
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-sm text-yellow-800 dark:text-yellow-300">{duplicateWarning}</div>
+              <button onClick={() => { setDuplicateWarning(null); setConflictHeaders([]); }} className="text-yellow-600 dark:text-yellow-200 hover:underline text-xs">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {step === 'upload' && (
@@ -197,7 +221,7 @@ function App() {
                 {mappings.filter(m => m.targetField).length} / {mappings.length} Columns Mapped
               </div>
             </div>
-            <MappingTable mappings={mappings} onUpdateMapping={handleUpdateMapping} />
+            <MappingTable mappings={mappings} onUpdateMapping={handleUpdateMapping} conflictHeaders={conflictHeaders} />
           </div>
         )}
       </main>
