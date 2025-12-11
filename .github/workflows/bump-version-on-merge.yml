@@ -43,3 +43,12 @@ jobs:
 
       - name: Set output
         run: echo "Bumped to ${{ steps.bump.outputs.new_version }}"
+
+      - name: Create and push Git tag
+        if: steps.bump.outputs.new_version != ''
+        run: |
+          set -e
+          VERSION=${{ steps.bump.outputs.new_version }}
+          echo "Creating tag v$VERSION"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
