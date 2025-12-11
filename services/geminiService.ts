@@ -79,6 +79,7 @@ export const resolveUnmappedFieldsWithAI = async (
 
   } catch (error) {
     console.error("Gemini Mapping Error:", error);
+    console.warn("Gemini AI mapping failed, returning original mappings");
     // Fallback: return original mappings if AI fails
     return mappings;
   }

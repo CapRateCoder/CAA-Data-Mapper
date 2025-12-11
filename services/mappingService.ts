@@ -10,7 +10,7 @@ export const generateInitialMappings = (
   // Configure Fuse.js for fuzzy matching against the full 1700+ field list
   const fuse = new Fuse(RESO_STANDARD_FIELDS, {
     keys: ['StandardName', 'DisplayName'], // Search across these keys
-    threshold: 0.3, // Lower threshold for stricter matching initially
+    threshold: 0.15, // Lower threshold = stricter matching (0 is perfect, 1 is no match)
     includeScore: true,
   });
 
@@ -38,14 +38,15 @@ export const generateInitialMappings = (
     }
 
     // 2. Fuzzy Match Check
+    // Score is 0 to 1, lower is better. Only MEDIUM/LOW from fuzzy; HIGH reserved for exact matches and strong aliases.
     const fuzzyResults = fuse.search(cleanHeader);
     
     if (fuzzyResults.length > 0 && fuzzyResults[0].score !== undefined) {
       const bestMatch = fuzzyResults[0];
-      // Score is 0 to 1, lower is better
       if (bestMatch.score < 0.2) {
+        // Very good fuzzy match, but still not as reliable as exact or aliasing
         targetField = bestMatch.item.StandardName;
-        confidence = MappingConfidence.HIGH;
+        confidence = MappingConfidence.MEDIUM;
         source = MappingSource.FUZZY;
       } else if (bestMatch.score < 0.4) {
         targetField = bestMatch.item.StandardName;
@@ -58,10 +59,10 @@ export const generateInitialMappings = (
       }
     }
 
-    // 3. Common MLS Aliases (Heuristics)
+    // 3. Common MLS Aliases (Heuristics) — HIGH confidence only for highly reliable patterns
     if (!targetField || confidence === MappingConfidence.LOW) {
        const h = cleanHeader.toLowerCase();
-       // Bed/Bath logic
+       // Exact or near-exact common abbreviations get HIGH; others get MEDIUM
        if (h.match(/^beds?$/) || h === 'br') { targetField = 'BedroomsTotal'; confidence = MappingConfidence.HIGH; source = MappingSource.FUZZY; }
        else if (h.match(/^baths?$/) || h === 'ba') { targetField = 'BathroomsTotalInteger'; confidence = MappingConfidence.HIGH; source = MappingSource.FUZZY; }
        else if (h.match(/^sqft$/) || h.match(/^sq.?ft.?$/)) { targetField = 'LivingArea'; confidence = MappingConfidence.MEDIUM; source = MappingSource.FUZZY; }

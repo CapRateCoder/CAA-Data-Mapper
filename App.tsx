@@ -7,6 +7,7 @@ import { generateInitialMappings } from './services/mappingService';
 import { resolveUnmappedFieldsWithAI } from './services/aiService';
 import { Database, Wand2, Download, RefreshCw, ArrowLeft } from 'lucide-react';
 import Papa from 'papaparse';
+import { APP_VERSION } from './constants';
 
 function App() {
   const [step, setStep] = useState<'upload' | 'map' | 'complete'>('upload');
@@ -126,6 +127,7 @@ function App() {
             <div>
               <h1 className="text-xl font-bold text-slate-900 dark:text-white">CAA Data Field Mapper</h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">MLS Data Standardization Tool</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">v{APP_VERSION}</p>
             </div>
           </div>
           {step === 'map' && (
