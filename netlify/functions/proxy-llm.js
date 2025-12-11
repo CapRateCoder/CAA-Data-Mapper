@@ -1,6 +1,5 @@
-const fetch = require('node-fetch');
-
-// Simple Netlify Function that forwards LLM requests to providers.
+// Netlify Function that forwards LLM requests to providers.
+// Uses built-in Node.js fetch (available in Node 18+)
 // Expects POST body: { provider: 'claude'|'openai'|'gemini', apiKey: '...', prompt: '...', model?: '...' }
 
 exports.handler = async function(event) {
@@ -38,14 +37,12 @@ exports.handler = async function(event) {
         body: JSON.stringify({ model: model || 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], max_tokens: 8000, temperature: 0.0 })
       });
     } else if (provider === 'gemini') {
-      // Forward to Gemini via Google GenAI REST (if needed). Keep simple passthrough for now.
-      resp = await fetch('https://api.gen.ai/v1/generate', {
+      resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(apiKey), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model: model || 'gemini-2.5-flash', prompt })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
     } else {
       return { statusCode: 400, body: 'Unsupported provider' };

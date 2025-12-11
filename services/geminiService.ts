@@ -1,6 +1,18 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { RESO_STANDARD_FIELDS } from "../constants";
 import { FieldMapping, MappingConfidence, MappingSource } from "../types";
+
+const extractJson = (text: string) => {
+  try { return JSON.parse(text); } catch {}
+  const m = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (m) {
+    try { return JSON.parse(m[1]); } catch {}
+  }
+  const b = text.match(/\{[\s\S]*\}/);
+  if (b) {
+    try { return JSON.parse(b[0]); } catch {}
+  }
+  throw new Error('Unable to parse JSON from Gemini response');
+};
 
 export const resolveUnmappedFieldsWithAI = async (
   mappings: FieldMapping[],
@@ -10,74 +22,63 @@ export const resolveUnmappedFieldsWithAI = async (
     throw new Error('API key is required');
   }
 
-  console.debug('[Gemini] Initializing GoogleGenAI SDK');
-  const ai = new GoogleGenAI({ apiKey });
-  console.debug('[Gemini] SDK initialized successfully');
-  // Filter for fields that are unmapped or low confidence
-  const problematicMappings = mappings.filter(
-    (m) => m.confidence === MappingConfidence.NONE || m.confidence === MappingConfidence.LOW
-  );
+  const problematic = mappings.filter(m => m.confidence === MappingConfidence.NONE || m.confidence === MappingConfidence.LOW);
+  if (problematic.length === 0) return mappings;
 
-  if (problematicMappings.length === 0) return mappings;
+  const fieldDescriptions = problematic.map(m => ({ header: m.originalHeader, samples: m.sampleValues.join(', ') }));
 
-  // Prepare context for Gemini
-  const fieldDescriptions = problematicMappings.map(m => ({
-    header: m.originalHeader,
-    samples: m.sampleValues.join(", ")
-  }));
-
-  const resoCandidates = RESO_STANDARD_FIELDS.map(f => f.StandardName).join(", ");
-
-  const prompt = `
-    You are a data engineering expert specializing in Real Estate Standards Organization (RESO) Data Dictionary.
-    
-    I have a list of MLS column headers and sample data that I need to map to the standard RESO field names.
-    
-    Available RESO Standard Fields: ${resoCandidates}
-
-    Columns to map:
-    ${JSON.stringify(fieldDescriptions, null, 2)}
-
-    Return a JSON array where each object contains "header" and "resoField". 
-    If you are confident, set "confidence" to "High" or "Medium". 
-    If you cannot determine a mapping, return null for "resoField".
-  `;
+  const prompt = `You are a data engineering expert specializing in the RESO Data Dictionary.\n\nReturn a JSON array of objects with properties: header, resoField (string or null), confidence (High|Medium|Low).\n\nColumns:\n${JSON.stringify(fieldDescriptions, null, 2)}`;
 
   try {
-    console.debug('[Gemini] Starting generateContent call with model gemini-2.5-flash');
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              header: { type: Type.STRING },
-              resoField: { type: Type.STRING, nullable: true },
-              confidence: { type: Type.STRING }
+    console.debug('[Gemini] Starting API call to Google Generative AI');
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
             }
-          }
-        }
+          ]
+        })
       }
-    });
+    );
 
-    console.debug('[Gemini] Response received, parsing JSON');
-    const aiSuggestions = JSON.parse(response.text);
-    console.debug('[Gemini] Parsed', aiSuggestions.length, 'suggestions');
+    console.debug('[Gemini] API response status:', resp.status);
 
-    // Merge AI suggestions back into mappings
+    if (!resp.ok) {
+      const errorData = await resp.json().catch(() => ({}));
+      const errorMsg = errorData?.error?.message || `HTTP ${resp.status}`;
+      console.error('[Gemini] API error:', errorMsg);
+      throw new Error(`Gemini API error: ${errorMsg}`);
+    }
+
+    const data = await resp.json();
+    console.debug('[Gemini] Raw response received, extracting text');
+
+    const content = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!content) {
+      console.warn('[Gemini] No content in response');
+      return mappings;
+    }
+
+    console.debug('[Gemini] Parsing JSON from response');
+    const parsed = extractJson(content);
+    console.debug('[Gemini] Parsed', (parsed || []).length, 'suggestions');
+
     return mappings.map(m => {
-      const suggestion = aiSuggestions.find((s: any) => s.header === m.originalHeader);
+      const suggestion = (parsed || []).find((s: any) => s.header === m.originalHeader);
       if (suggestion && suggestion.resoField) {
-        return {
-          ...m,
-          targetField: suggestion.resoField,
-          confidence: suggestion.confidence === "High" ? MappingConfidence.HIGH : MappingConfidence.MEDIUM,
-          source: MappingSource.AI
-        };
+        console.debug(`[Gemini] Mapping ${m.originalHeader} -> ${suggestion.resoField}`);
+        return { ...m, targetField: suggestion.resoField, confidence: suggestion.confidence === 'High' ? MappingConfidence.HIGH : MappingConfidence.MEDIUM, source: MappingSource.AI };
       }
       return m;
     });
@@ -89,3 +90,5 @@ export const resolveUnmappedFieldsWithAI = async (
     throw new Error(`Gemini API failed: ${errorMsg}`);
   }
 };
+
+export default { resolveUnmappedFieldsWithAI };
