@@ -59,7 +59,7 @@ export const resolveUnmappedFieldsWithClaude = async (
         provider: 'claude',
         apiKey: apiKey,
         prompt: prompt,
-        model: 'claude-3-5-sonnet'
+        model: 'claude-3-sonnet-20240229'
       })
     });
 
