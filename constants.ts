@@ -1,8 +1,8 @@
 import { ResoFieldDefinition } from './types';
 import Papa from 'papaparse';
 
-// Application version - increment by 0.1 with each deployment
-export const APP_VERSION = '2.0.3';
+// Application version - base for automated bumping on merged PRs
+export const APP_VERSION = '2.0.4';
 
 // Compressed CSV Data - ResourceName,StandardName,DisplayName
 // Definition and SimpleDataType removed to save space while maintaining mapping capability

@@ -37,25 +37,57 @@ export const generateInitialMappings = (
       };
     }
 
-    // 2. Fuzzy Match Check
+    // 2. Alias-based exact matches (case-insensitive synonyms)
+    // These map common MLS header variations directly to RESO fields with HIGH confidence.
+    const aliasMap: Record<string, string[]> = {
+      StandardStatus: ['status', 'active', 'active under contract', 'canceled', 'closed', 'expired', 'pending', 'withdrawn'],
+      LivingArea: ['square footage', 'gla', 'size sf', 'sizesf', 'building size', 'gross living area', 'sqft', 'square feet', 'living area'],
+      ClosePrice: ['selling price', 'close price', 'sold price', 'soldprice', 'closing price', 'closingprice', 'sale price', 'sp'],
+      BedroomsTotal: ['bedrooms', 'br', 'beds', 'bed'],
+      BathroomsFull: ['fbths', 'full baths', 'fullba'],
+      BathroomHalfs: ['hbths', 'halfba', 'half baths'],
+      BathroomsTotalInteger: ['bathrooms', 'total baths', 'bath', 'baths'],
+      ListingId: ['mls#', 'mls #', 'mls_id', 'mlsid'],
+      StructureType: ['style code'],
+      CloseDate: ['selling date', 'sold date', 'solddate', 'closing date', 'close date'],
+      CumulativeDaysOnMarket: ['cdom'],
+      ListPrice: ['listing price', 'list price', 'listprice', 'asking price', 'lp'],
+      DaysOnMarket: ['dom', 'days on market', 'market days']
+    };
+
+    const headerLower = cleanHeader.toLowerCase();
+    for (const [std, aliases] of Object.entries(aliasMap)) {
+      for (const a of aliases) {
+        if (headerLower === a.toLowerCase()) {
+          targetField = std;
+          confidence = MappingConfidence.HIGH;
+          source = MappingSource.FUZZY;
+          break;
+        }
+      }
+      if (targetField) break;
+    }
+
+    // 3. Fuzzy Match Check (runs only if alias did not produce a HIGH match)
     // Score is 0 to 1, lower is better. Only MEDIUM/LOW from fuzzy; HIGH reserved for exact matches and strong aliases.
-    const fuzzyResults = fuse.search(cleanHeader);
-    
-    if (fuzzyResults.length > 0 && fuzzyResults[0].score !== undefined) {
-      const bestMatch = fuzzyResults[0];
-      if (bestMatch.score < 0.2) {
-        // Very good fuzzy match, but still not as reliable as exact or aliasing
-        targetField = bestMatch.item.StandardName;
-        confidence = MappingConfidence.MEDIUM;
-        source = MappingSource.FUZZY;
-      } else if (bestMatch.score < 0.4) {
-        targetField = bestMatch.item.StandardName;
-        confidence = MappingConfidence.MEDIUM;
-        source = MappingSource.FUZZY;
-      } else if (bestMatch.score < 0.6) {
-        targetField = bestMatch.item.StandardName;
-        confidence = MappingConfidence.LOW;
-        source = MappingSource.FUZZY;
+    if (!targetField) {
+      const fuzzyResults = fuse.search(cleanHeader);
+      if (fuzzyResults.length > 0 && fuzzyResults[0].score !== undefined) {
+        const bestMatch = fuzzyResults[0];
+        if (bestMatch.score < 0.2) {
+          // Very good fuzzy match, but still not as reliable as exact or aliasing
+          targetField = bestMatch.item.StandardName;
+          confidence = MappingConfidence.MEDIUM;
+          source = MappingSource.FUZZY;
+        } else if (bestMatch.score < 0.4) {
+          targetField = bestMatch.item.StandardName;
+          confidence = MappingConfidence.MEDIUM;
+          source = MappingSource.FUZZY;
+        } else if (bestMatch.score < 0.6) {
+          targetField = bestMatch.item.StandardName;
+          confidence = MappingConfidence.LOW;
+          source = MappingSource.FUZZY;
+        }
       }
     }
 

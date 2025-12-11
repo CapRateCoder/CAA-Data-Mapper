@@ -63,4 +63,12 @@ See [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md) for detailed instructions.
 - **Privacy-first**: Keys never leave the user's browser
 
 ## Version
-**2.0.0** - User-provided API keys (Stable Checkpoint)
+**2.67** - Recent updates
+
+- Multi-LLM support: Google Gemini and OpenAI added as provider options.
+- Duplicate mapping detection: warns and highlights conflicting column→field mappings before export.
+- Improved fuzzy matching and alias heuristics for common MLS headers (e.g., `Bedrooms`, `Sqft`, `MLS#`, `List Price`) — these now map at HIGH confidence.
+- Claude (Anthropic) temporarily disabled in the UI with a "Coming Soon" label while backend integration is stabilized.
+- Added visible version number in the app header and automated debugging/logging for AI providers.
+
+Previous stable: **2.0.3**
