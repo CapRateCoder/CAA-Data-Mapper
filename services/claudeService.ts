@@ -46,37 +46,35 @@ export const resolveUnmappedFieldsWithClaude = async (
 
   const prompt = `You are a data engineering expert specializing in the RESO Data Dictionary.\n\nReturn a JSON array of objects with properties: header, resoField (string or null), confidence (High|Medium|Low).\n\nColumns:\n${JSON.stringify(fieldDescriptions, null, 2)}`;
 
-  console.debug('[Claude] Starting Claude API call');
+  console.debug('[Claude] Starting Claude API call via proxy');
 
   try {
-    console.debug('[Claude] Fetching from Anthropic Messages API');
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    console.debug('[Claude] Fetching through Netlify proxy');
+    const resp = await fetch('/.netlify/functions/proxy-llm', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1024,
-        messages: [
-          { role: 'user', content: prompt }
-        ]
+        provider: 'claude',
+        apiKey: apiKey,
+        prompt: prompt,
+        model: 'claude-3-5-sonnet-20241022'
       })
     });
 
-    console.debug('[Claude] Response status:', resp.status);
+    console.debug('[Claude] Proxy response status:', resp.status);
 
     if (!resp.ok) {
       const errorText = await resp.text();
-      console.error('[Claude] API error response:', errorText);
-      throw new Error(`Claude API error ${resp.status}: ${errorText}`);
+      console.error('[Claude] Proxy error response:', errorText);
+      throw new Error(`Claude proxy error ${resp.status}: ${errorText}`);
     }
 
     const data = await resp.json();
     console.debug('[Claude] Raw response:', JSON.stringify(data).substring(0, 300));
 
+    // Messages API response structure: { content: [{ type: 'text', text: '...' }], ... }
     const content = data?.content?.[0]?.text || '';
     console.debug('[Claude] Extracted content:', content.substring(0, 300));
 

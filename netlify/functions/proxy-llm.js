@@ -15,13 +15,18 @@ exports.handler = async function(event) {
   try {
     let resp;
     if (provider === 'claude') {
-      resp = await fetch('https://api.anthropic.com/v1/complete', {
+      resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
         },
-        body: JSON.stringify({ model: model || 'claude-2.1', prompt, max_tokens: 1000, temperature: 0.0 })
+        body: JSON.stringify({ 
+          model: model || 'claude-3-5-sonnet-20241022', 
+          max_tokens: 1024, 
+          messages: [{ role: 'user', content: prompt }]
+        })
       });
     } else if (provider === 'openai') {
       resp = await fetch('https://api.openai.com/v1/chat/completions', {
