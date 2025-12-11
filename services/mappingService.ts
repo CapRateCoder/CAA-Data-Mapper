@@ -10,7 +10,7 @@ export const generateInitialMappings = (
   // Configure Fuse.js for fuzzy matching against the full 1700+ field list
   const fuse = new Fuse(RESO_STANDARD_FIELDS, {
     keys: ['StandardName', 'DisplayName'], // Search across these keys
-    threshold: 0.3, // Lower threshold for stricter matching initially
+    threshold: 0.15, // Lower threshold = stricter matching (0 is perfect, 1 is no match)
     includeScore: true,
   });
 
