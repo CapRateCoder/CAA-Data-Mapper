@@ -31,6 +31,7 @@ export const resolveUnmappedFieldsWithAI = async (
 
   try {
     console.debug('[Gemini] Starting API call to Google Generative AI');
+    console.debug('[Gemini] API key length:', apiKey.length, 'chars, first 4:', apiKey.substring(0, 4));
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
       {

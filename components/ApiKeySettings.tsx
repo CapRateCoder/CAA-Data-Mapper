@@ -26,7 +26,7 @@ export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ onLLMConfigChang
     // Notify parent of current selection and key if present
     const key = keys[selectedProvider as keyof typeof keys] || '';
     onLLMConfigChange(selectedProvider, key);
-  }, []); // run once on mount
+  }, [selectedProvider, keys]); // Re-run when provider or keys change
 
   const handleProviderChange = (p: string) => {
     setSelectedProvider(p);
