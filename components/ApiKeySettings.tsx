@@ -6,9 +6,9 @@ interface ApiKeySettingsProps {
 }
 
 const PROVIDERS = [
-  { id: 'gemini', label: 'Google Gemini', helpUrl: 'https://aistudio.google.com/app/apikey' },
-  { id: 'openai', label: 'OpenAI (ChatGPT)', helpUrl: 'https://platform.openai.com/account/api-keys' },
-  { id: 'claude', label: 'Anthropic (Claude)', helpUrl: 'https://console.anthropic.com/' }
+  { id: 'gemini', label: 'Google Gemini', helpUrl: 'https://aistudio.google.com/app/apikey', disabled: false },
+  { id: 'openai', label: 'OpenAI (ChatGPT)', helpUrl: 'https://platform.openai.com/account/api-keys', disabled: false },
+  { id: 'claude', label: 'Anthropic (Claude) - Coming Soon', helpUrl: 'https://console.anthropic.com/', disabled: true }
 ];
 
 export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ onLLMConfigChange }) => {
@@ -74,12 +74,13 @@ export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ onLLMConfigChang
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
           <div className="flex items-center gap-3">
             {PROVIDERS.map(pr => (
-              <label key={pr.id} className="flex items-center gap-2 text-sm">
+              <label key={pr.id} className={`flex items-center gap-2 text-sm ${pr.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <input
                   type="radio"
                   name="llm-provider"
                   checked={selectedProvider === pr.id}
-                  onChange={() => handleProviderChange(pr.id)}
+                  onChange={() => !pr.disabled && handleProviderChange(pr.id)}
+                  disabled={pr.disabled}
                 />
                 <span className="ml-1">{pr.label}</span>
               </label>
@@ -88,13 +89,17 @@ export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ onLLMConfigChang
 
           <div className="text-sm text-gray-600 dark:text-gray-400">
             <p className="mb-2">Select your preferred LLM provider and enter its API key. Keys are stored locally in your browser.</p>
-            <p className="text-xs">
-              Get a key from{' '}
-              <a href={providerMeta.helpUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
-                {providerMeta.label}
-              </a>
-              . Your key is stored locally in your browser and never sent to our servers.
-            </p>
+            {selectedProvider === 'claude' ? (
+              <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold">Claude support is coming soon. Please select Gemini or OpenAI.</p>
+            ) : (
+              <p className="text-xs">
+                Get a key from{' '}
+                <a href={providerMeta.helpUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
+                  {providerMeta.label}
+                </a>
+                . Your key is stored locally in your browser and never sent to our servers.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-2">
