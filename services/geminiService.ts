@@ -10,7 +10,9 @@ export const resolveUnmappedFieldsWithAI = async (
     throw new Error('API key is required');
   }
 
+  console.debug('[Gemini] Initializing GoogleGenAI SDK');
   const ai = new GoogleGenAI({ apiKey });
+  console.debug('[Gemini] SDK initialized successfully');
   // Filter for fields that are unmapped or low confidence
   const problematicMappings = mappings.filter(
     (m) => m.confidence === MappingConfidence.NONE || m.confidence === MappingConfidence.LOW
@@ -42,6 +44,7 @@ export const resolveUnmappedFieldsWithAI = async (
   `;
 
   try {
+    console.debug('[Gemini] Starting generateContent call with model gemini-2.5-flash');
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
@@ -61,7 +64,9 @@ export const resolveUnmappedFieldsWithAI = async (
       }
     });
 
+    console.debug('[Gemini] Response received, parsing JSON');
     const aiSuggestions = JSON.parse(response.text);
+    console.debug('[Gemini] Parsed', aiSuggestions.length, 'suggestions');
 
     // Merge AI suggestions back into mappings
     return mappings.map(m => {
@@ -78,9 +83,9 @@ export const resolveUnmappedFieldsWithAI = async (
     });
 
   } catch (error) {
-    console.error("Gemini Mapping Error:", error);
-    console.warn("Gemini AI mapping failed, returning original mappings");
-    // Fallback: return original mappings if AI fails
-    return mappings;
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error("[Gemini] Critical error:", errorMsg);
+    console.error("[Gemini] Full error:", error);
+    throw new Error(`Gemini API failed: ${errorMsg}`);
   }
 };

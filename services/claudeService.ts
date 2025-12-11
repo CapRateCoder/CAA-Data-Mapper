@@ -95,9 +95,10 @@ export const resolveUnmappedFieldsWithClaude = async (
       return m;
     });
   } catch (error) {
-    console.error('[Claude] mapping error:', error);
-    console.warn('[Claude] API mapping failed, returning original mappings');
-    return mappings;
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('[Claude] Critical error:', errorMsg);
+    console.error('[Claude] Full error:', error);
+    throw new Error(`Claude API failed: ${errorMsg}`);
   }
 };
 

@@ -56,9 +56,10 @@ export const resolveUnmappedFieldsWithOpenAI = async (
       return m;
     });
   } catch (error) {
-    console.error('OpenAI mapping error:', error);
-    console.warn('OpenAI API mapping failed, returning original mappings');
-    return mappings;
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('[OpenAI] Critical error:', errorMsg);
+    console.error('[OpenAI] Full error:', error);
+    throw new Error(`OpenAI API failed: ${errorMsg}`);
   }
 };
 
