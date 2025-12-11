@@ -17,6 +17,7 @@ function App() {
   const [apiKey, setApiKey] = useState<string>('');
   const [llmProvider, setLlmProvider] = useState<string>(() => localStorage.getItem('selected_llm') || 'gemini');
   const [aiError, setAiError] = useState<string>(''); 
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   const handleDataLoaded = (headers: string[], data: any[]) => {
     const initial = generateInitialMappings(headers, data);
@@ -29,6 +30,8 @@ function App() {
     setMappings(prev => prev.map(m => 
       m.id === id ? { ...m, targetField: newTarget } : m
     ));
+    // Clear duplicate warning when user edits mappings
+    setDuplicateWarning(null);
   };
 
   const handleMagicFix = async () => {
@@ -52,6 +55,25 @@ function App() {
 
   const handleExport = () => {
     if (mappings.length === 0 || rawData.length === 0) return;
+    // Detect duplicate target field names (multiple columns mapped to same RESO field)
+    const targetMap = new Map<string, string[]>();
+    mappings.forEach(m => {
+      if (m.targetField) {
+        const arr = targetMap.get(m.targetField) || [];
+        arr.push(m.originalHeader);
+        targetMap.set(m.targetField, arr);
+      }
+    });
+
+    const duplicates = Array.from(targetMap.entries()).filter(([, arr]) => arr.length > 1);
+    if (duplicates.length > 0) {
+      // Build a readable warning message
+      const parts = duplicates.map(([target, headers]) => `"${target}" <- ${headers.join(', ')}`);
+      const message = `Duplicate target fields detected: ${parts.join(' ; ')}. Please resolve duplicates before exporting.`;
+      setDuplicateWarning(message);
+      // don't proceed with export
+      return;
+    }
 
     const mappedData = rawData.map(row => {
       const newRow: Record<string, any> = {};
@@ -161,6 +183,11 @@ function App() {
             {aiError && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <p className="text-sm text-red-700 dark:text-red-300">{aiError}</p>
+              </div>
+            )}
+            {duplicateWarning && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <p className="text-sm text-yellow-800 dark:text-yellow-300">{duplicateWarning}</p>
               </div>
             )}
             
