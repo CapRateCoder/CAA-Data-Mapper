@@ -6,6 +6,7 @@ import { Check, AlertTriangle, BrainCircuit, Search, ChevronDown, Plus, RotateCc
 interface MappingTableProps {
   mappings: FieldMapping[];
   onUpdateMapping: (id: string, newTarget: string) => void;
+  conflictHeaders?: string[];
 }
 
 const ConfidenceBadge: React.FC<{ confidence: MappingConfidence; source: MappingSource }> = ({ confidence, source }) => {
@@ -170,7 +171,7 @@ const ResoCombobox: React.FC<{
   );
 };
 
-export const MappingTable: React.FC<MappingTableProps> = ({ mappings, onUpdateMapping }) => {
+export const MappingTable: React.FC<MappingTableProps> = ({ mappings, onUpdateMapping, conflictHeaders = [] }) => {
   return (
     <div className="overflow-visible border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm bg-white dark:bg-slate-900">
       <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -183,10 +184,16 @@ export const MappingTable: React.FC<MappingTableProps> = ({ mappings, onUpdateMa
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
-          {mappings.map((mapping) => (
-            <tr key={mapping.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+          {mappings.map((mapping) => {
+            const isConflict = conflictHeaders.includes(mapping.originalHeader);
+            const safeId = `mapping-row-${mapping.originalHeader.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+            return (
+            <tr key={mapping.id} id={safeId} className={`transition-colors ${isConflict ? 'bg-yellow-50 dark:bg-yellow-900/20 ring-1 ring-yellow-200 dark:ring-yellow-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
               <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-slate-100">
-                {mapping.originalHeader}
+                <div className="flex items-center gap-2">
+                  {isConflict && <span className="text-xs text-yellow-700 dark:text-yellow-300 font-medium">⚠</span>}
+                  <span>{mapping.originalHeader}</span>
+                </div>
               </td>
               <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                 <div className="max-w-xs truncate font-mono text-xs bg-slate-100 dark:bg-slate-800 p-1 rounded" title={mapping.sampleValues.join(', ')}>
@@ -204,7 +211,8 @@ export const MappingTable: React.FC<MappingTableProps> = ({ mappings, onUpdateMa
                 <ConfidenceBadge confidence={mapping.confidence} source={mapping.source} />
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
