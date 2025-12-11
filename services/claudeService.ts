@@ -54,6 +54,7 @@ export const resolveUnmappedFieldsWithClaude = async (
     });
   } catch (error) {
     console.error('Claude mapping error:', error);
+    console.warn('Claude API mapping failed, returning original mappings');
     return mappings;
   }
 };
